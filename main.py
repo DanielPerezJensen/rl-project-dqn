@@ -1,54 +1,60 @@
 import gym
-import math
-import random
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from collections import namedtuple, deque
-from itertools import count
-from PIL import Image
-from replaymemory import ReplayMemory
-from models import *
-from train import train
+from train_pendulum import train_pendulum
+from train_cartpole import train_cartpole
+from train_pongram import train_pongram
+import argparse
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import torchvision.transforms as T
 
 # Select which env to use
 def select_env(env_name):
     if env_name == 'cartpole':
         return gym.make('CartPole-v0').unwrapped
     if env_name == 'pendulum':
-        return gym.make('Pendulum-v0')
-
-def select_network(input_size, hidden_layer, output_size):
-    if env_name == 'cartpole':
-        return DQN_cartpole(input_size, hidden_layer, output_size)
-    if env_name == 'pendulum':
-        return DQN_pendulum(p_actions)
+        return gym.make('Pendulum-v1')
+    if env_name == 'pongram':
+        return gym.make('Pong-ram-v0')
 
 if __name__ == "__main__":
-    env_name = 'pendulum'
-    max_size = 10000
-    learning_rate = 0.001
-    episodes = 50
-    eps_start = 0.9
-    eps_end = 0.05
-    eps_decay = 200
-    batch_size = 64
-    hidden_layer = 256
-    # We use a discrete action space for pendulum
-    p_actions = 5
 
-    env = select_env(env_name)
-    output_size = p_actions if env_name is 'pendulum' else env.action_space.n
-    input_size = env.observation_space.shape[0]
-    model = select_network(input_size, hidden_layer, output_size)
-    memory = ReplayMemory(max_size)
-    optimizer = optim.Adam(model.parameters(), learning_rate)
-    train(env, env_name, model, memory, optimizer, episodes,
-          eps_start, eps_end, eps_decay, batch_size, learning_rate, p_actions)
+    #Overall
+    parser = argparse.ArgumentParser(description='Solve multiple environments with DQN or DDQN')
+    parser.add_argument('--env_name', type=str, default="cartpole", help="Choose environment, options: cartpole,"
+                                                                         "pendulum or pongram")
+    parser.add_argument(
+        '--gamma', type=float, default=0.9, metavar='G', help='Discount factor (default: 0.9)')
+    parser.add_argument('--q_function', type=str, default="double", help="Type of Q function, "
+                                                                          "choose between 'vanilla' or 'double'"
+                                                                          "(default: vanilla)")
+    #Cartpole
+    parser.add_argument('--max_size', type=int, default=10000, help='(Cartpole) Size of Replay memory (default: 10000)')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='(Cartpole) Learning rate (default: 0.001)')
+    parser.add_argument('--episodes', type=int, default=200, help='(Cartpole) Amount of episodes (default: 200)')
+    parser.add_argument('--eps_start', type=float, default=0.9, help='(Cartpole) Starting value of epsilon (default: 0.9)')
+    parser.add_argument('--eps_end', type=float, default=0.05, help='(Cartpole) End value of epsilon (default: 0.05)')
+    parser.add_argument('--eps_decay', type=int, default=200, help='(Cartpole) Amount of episodes (default: 200)')
+    parser.add_argument('--hidden_layer', type=int, default=256, help='(Cartpole) Hidden layer size')
+    parser.add_argument('--batch_size', type=int, default=64, help='(Cartpole) Batch size')
 
+    #Pendulum
+    parser.add_argument(
+        '--num_actions', type=int, default=5, metavar='N', help='(Pendulum) discretize action space (default: 5)')
+    parser.add_argument('--render', action='store_true', help='(Pendulum) render the environment')
+    parser.add_argument(
+        '--log_interval',
+        type=int,
+        default=10,
+        metavar='N',
+        help='interval between training status logs (default: 10)')
+
+    #Pongram
+
+    args = parser.parse_args()
+
+    env = select_env(args.env_name)
+    if args.env_name == "cartpole":
+        train_cartpole(env, args.episodes, args.eps_start, args.eps_end, args.eps_decay, args.gamma,
+                       args.learning_rate, args.hidden_layer, args.batch_size, args.max_size)
+    if args.env_name == "pendulum":
+        train_pendulum(env, args.gamma, args.num_actions, args.render, args.log_interval, args.q_function)
+    # if args.env_name == "pongram":
+    #     train_pongram(env)
