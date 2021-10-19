@@ -34,7 +34,19 @@ def get_args():
         "--eps_test", type=float, default=0.05, help="Testing policy epsilon"
     )
     parser.add_argument(
-        "--eps_train", type=float, default=0.1, help="Training policy epsilon"
+        "--eps_train_start",
+        type=float,
+        default=0.1,
+        help="Starting training policy epsilon",
+    )
+    parser.add_argument(
+        "--eps_train_end", type=float, default=0.1, help="End training policy epsilon"
+    )
+    parser.add_argument(
+        "--eps_train_decay_length",
+        type=int,
+        default=0,
+        help="Number of steps to decay training policy epsilon for",
     )
     parser.add_argument(
         "--buffer_size", type=int, default=20000, help="Replay buffer size"
@@ -177,14 +189,16 @@ def train(args):
             return False
 
     def train_fn(epoch, env_step):
-        # eps annnealing, just a demo
-        if env_step <= 10000:
-            policy.set_eps(args.eps_train)
-        elif env_step <= 50000:
-            eps = args.eps_train - (env_step - 10000) / 40000 * (0.9 * args.eps_train)
-            policy.set_eps(eps)
+        # Linear decay from eps_train_start to eps_train_end for eps_train_decay_length steps
+        if env_step <= args.eps_train_decay_length:
+            eps = args.eps_train_start - env_step / args.eps_train_decay_length * (
+                args.eps_train_start - args.eps_train_end
+            )
         else:
-            policy.set_eps(0.1 * args.eps_train)
+            eps = args.eps_train_end
+        policy.set_eps(eps)
+        if env_step % 1000 == 0:
+            logger.write("train/env_step", env_step, {"train/eps": eps})
 
     def test_fn(epoch, env_step):
         policy.set_eps(args.eps_test)
