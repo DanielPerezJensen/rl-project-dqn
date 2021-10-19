@@ -27,7 +27,9 @@ def get_args():
         default="vanilla",
         help="Q-learning variation (vanilla | double)",
     )
-    parser.add_argument("--seed", type=int, default=1626, help="Random seed")
+    parser.add_argument(
+        "--seed", type=int, default=None, help="Random seed ('None' uses no seed)"
+    )
     parser.add_argument(
         "--eps_test", type=float, default=0.05, help="Testing policy epsilon"
     )
@@ -39,10 +41,10 @@ def get_args():
     )
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     parser.add_argument(
-        "--gamma", type=float, default=0.9, help="Environment discount factor"
+        "--gamma", type=float, default=0.99, help="Environment discount factor"
     )
     parser.add_argument(
-        "--n_step", type=int, default=3, help="Number of steps ahead to estimate"
+        "--n_step", type=int, default=4, help="Number of steps ahead to estimate"
     )
     parser.add_argument(
         "--target_update_freq",
@@ -106,10 +108,11 @@ def train(args):
     )
 
     # Seed
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    train_envs.seed(args.seed)
-    test_envs.seed(args.seed)
+    if args.seed:
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+        train_envs.seed(args.seed)
+        test_envs.seed(args.seed)
 
     # Define model
     net = Net(
