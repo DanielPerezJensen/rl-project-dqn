@@ -1,12 +1,14 @@
 import argparse
+import glob
 import os
-import pickle
 import pprint
 from datetime import datetime
 
 import gym
 import numpy as np
+import pandas as pd
 import torch
+from tensorboard.backend.event_processing import event_accumulator
 from tianshou.data import Collector, VectorReplayBuffer
 from tianshou.env import DummyVectorEnv
 from tianshou.policy import DQNPolicy
@@ -107,6 +109,25 @@ def get_args():
     return args
 
 
+def save_tb_to_csv(writer):
+    # Get paths
+    log_dir = writer.log_dir
+    tb_path = glob.glob(log_dir + "/events*")[0]
+
+    # Load tensorboard log file
+    ea = event_accumulator.EventAccumulator(tb_path)
+    ea.Reload()
+
+    # Save each logged scalar to csv
+    if not os.path.exists(os.path.join(log_dir, "csv")):
+        os.makedirs(os.path.join(log_dir, "csv"))
+
+    for tag in ea.Tags()["scalars"]:
+        filename = os.path.join(log_dir, "csv", tag.replace("/", "_") + ".csv")
+        df = pd.DataFrame(ea.Scalars(tag))
+        df.to_csv(filename)
+
+
 def train(args):
     # Setup environment
     env = gym.make(args.task)
@@ -190,7 +211,7 @@ def train(args):
 
     def train_fn(epoch, env_step):
         # Linear decay from eps_train_start to eps_train_end for eps_train_decay_length steps
-        if env_step <= args.eps_train_decay_length:
+        if env_step < args.eps_train_decay_length:
             eps = args.eps_train_start - env_step / args.eps_train_decay_length * (
                 args.eps_train_start - args.eps_train_end
             )
@@ -223,6 +244,9 @@ def train(args):
 
     # Print results
     pprint.pprint(result)
+
+    # Save metrics as csv
+    save_tb_to_csv(writer)
 
     # Test final policy
     env = gym.make(args.task)
