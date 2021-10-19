@@ -197,7 +197,6 @@ def train(args):
     logger = TensorboardLogger(writer)
 
     def save_fn(policy):
-        # filename = os.path.join(args.logdir, args.task, "policy.pth")
         filename = "policy.pth"
         torch.save(policy.state_dict(), os.path.join(log_path, filename))
 
@@ -247,6 +246,21 @@ def train(args):
 
     # Save metrics as csv
     save_tb_to_csv(writer)
+
+    # Get value estimates
+    q_vals = []
+    for _ in range(10000):
+        idx = np.random.randint(args.buffer_size)
+        obs = buf.get(idx, key="obs")
+        vals = policy.model(np.expand_dims(obs, 0))[0].detach().cpu().numpy()[0]
+        q_vals.append(np.max(vals))
+    mean_q_val = np.mean(q_vals)
+    std_q_val = np.std(q_vals)
+
+    # Save value estimates to csv
+    df = pd.DataFrame([[mean_q_val, std_q_val]], columns=["mean", "std"])
+    filename = os.path.join(writer.log_dir, "csv", "q_vals.csv")
+    df.to_csv(filename)
 
     # Test final policy
     env = gym.make(args.task)
