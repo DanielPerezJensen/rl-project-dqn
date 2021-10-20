@@ -63,8 +63,8 @@ def get_args():
     parser.add_argument(
         "--target_update_freq",
         type=int,
-        default=320,
-        help="Every how many steps to update target policy",
+        default=500,
+        help="Number of steps between target network updates",
     )
     parser.add_argument("--epoch", type=int, default=20, help="Max epochs")
     parser.add_argument(
@@ -74,7 +74,7 @@ def get_args():
         "--step_per_collect",
         type=int,
         default=10,
-        help="Number of steps between network updates",
+        help="How many update steps to per transition",
     )
     parser.add_argument(
         "--update_per_step",
@@ -224,6 +224,7 @@ def train(args):
         policy.set_eps(args.eps_test)
 
     # trainer
+    print("Training...")
     result = offpolicy_trainer(
         policy,
         train_collector,
