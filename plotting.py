@@ -58,6 +58,9 @@ if __name__ == "__main__":
 
     # Training reward over time
     plt.figure()
+    ax = plt.subplot(111)
+    ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+    ax.xaxis.major.formatter._useMathText = True
     for algo_type in test_reward_avgs_dict:
         means = test_reward_avgs_dict[algo_type]
         stds = test_reward_stds_dict[algo_type]
@@ -85,4 +88,4 @@ if __name__ == "__main__":
     ax.set_xticks([1, 2])
     ax.set_xticklabels(["DQN", "Double DQN"])
     plt.title(args.task_folder)
-    plt.savefig(f"results/violin_{args.task_folder}")
+    plt.savefig(f"results/boxplot_{args.task_folder}")
