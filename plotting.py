@@ -70,7 +70,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig(f"results/training_{args.task_folder}")
 
-    # Violin plot for spread of Q-values
+    # Plot for spread of Q-values
     fig = plt.figure()
     ax = plt.subplot(111)
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     qs = q_vals_dict["dqn"]
     qs_double = q_vals_dict["double_dqn"]
-    plt.violinplot([qs, qs_double], showmeans=True, showextrema=True)
+    plt.boxplot([qs, qs_double])
     plt.ylabel("Mean Q-Values")
     ax.set_xticks([1, 2])
     ax.set_xticklabels(["DQN", "Double DQN"])
