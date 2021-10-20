@@ -63,8 +63,8 @@ def get_args():
     parser.add_argument(
         "--target_update_freq",
         type=int,
-        default=320,
-        help="Every how many steps to update target policy",
+        default=500,
+        help="Number of steps between target network updates",
     )
     parser.add_argument("--epoch", type=int, default=20, help="Max epochs")
     parser.add_argument(
@@ -74,7 +74,7 @@ def get_args():
         "--step_per_collect",
         type=int,
         default=10,
-        help="Number of steps between network updates",
+        help="How many update steps to per transition",
     )
     parser.add_argument(
         "--update_per_step",
@@ -197,7 +197,6 @@ def train(args):
     logger = TensorboardLogger(writer)
 
     def save_fn(policy):
-        # filename = os.path.join(args.logdir, args.task, "policy.pth")
         filename = "policy.pth"
         torch.save(policy.state_dict(), os.path.join(log_path, filename))
 
@@ -225,6 +224,7 @@ def train(args):
         policy.set_eps(args.eps_test)
 
     # trainer
+    print("Training...")
     result = offpolicy_trainer(
         policy,
         train_collector,
@@ -247,6 +247,21 @@ def train(args):
 
     # Save metrics as csv
     save_tb_to_csv(writer)
+
+    # Get value estimates
+    q_vals = []
+    for _ in range(10000):
+        idx = np.random.randint(args.buffer_size)
+        obs = buf.get(idx, key="obs")
+        vals = policy.model(np.expand_dims(obs, 0))[0].detach().cpu().numpy()[0]
+        q_vals.append(np.max(vals))
+    mean_q_val = np.mean(q_vals)
+    std_q_val = np.std(q_vals)
+
+    # Save value estimates to csv
+    df = pd.DataFrame([[mean_q_val, std_q_val]], columns=["mean", "std"])
+    filename = os.path.join(writer.log_dir, "csv", "q_vals.csv")
+    df.to_csv(filename)
 
     # Test final policy
     env = gym.make(args.task)
