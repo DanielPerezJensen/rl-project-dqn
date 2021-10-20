@@ -5,6 +5,7 @@ import pprint
 from datetime import datetime
 
 import gym
+import gym_maze
 import numpy as np
 import pandas as pd
 import torch
@@ -201,12 +202,12 @@ def train(args):
         torch.save(policy.state_dict(), os.path.join(log_path, filename))
 
     def stop_fn(mean_rewards):
-        if env.spec.reward_threshold:
-            return mean_rewards >= env.spec.reward_threshold
-        elif "Pong" in args.task:
-            return mean_rewards >= 20
-        else:
-            return False
+        # if env.spec.reward_threshold:
+        #     return mean_rewards >= env.spec.reward_threshold
+        # elif "Pong" in args.task:
+        #     return mean_rewards >= 20
+        # else:
+        return False
 
     def train_fn(epoch, env_step):
         # Linear decay from eps_train_start to eps_train_end for eps_train_decay_length steps
