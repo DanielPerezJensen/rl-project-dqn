@@ -1,8 +1,9 @@
-import pandas as pd
-import os
 import argparse
+import os
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import pandas as pd
 
 
 def average_csvs(task_folder):
@@ -24,14 +25,22 @@ def average_csvs(task_folder):
         for run_folder in os.listdir(algo_path):
             run_path = os.path.join(algo_path, run_folder, "csv")
 
-            q_vals.append(pd.read_csv(os.path.join(run_path, "q_vals.csv"), index_col=0)["mean"][0])
+            q_vals.append(
+                pd.read_csv(os.path.join(run_path, "q_vals.csv"), index_col=0)["mean"][
+                    0
+                ]
+            )
 
             test_reward_avgs.append(
-                pd.read_csv(os.path.join(run_path, "test_reward.csv"), index_col=0)["value"]
+                pd.read_csv(os.path.join(run_path, "test_reward.csv"), index_col=0)[
+                    "value"
+                ]
             )
 
             test_reward_stds.append(
-                pd.read_csv(os.path.join(run_path, "test_reward_std.csv"), index_col=0)["value"]
+                pd.read_csv(os.path.join(run_path, "test_reward_std.csv"), index_col=0)[
+                    "value"
+                ]
             )
 
         q_vals_dict[algo_folder] = q_vals
@@ -46,26 +55,27 @@ def average_csvs(task_folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--task_folder", type=str, default="CartPole-v0",
-        help="Name of gym environment"
+        "--task_folder", type=str, default="CartPole-v0", help="Name of gym environment"
     )
 
     args = parser.parse_known_args()[0]
 
-    q_vals_dict, test_reward_avgs_dict, test_reward_stds_dict, steps = average_csvs(args.task_folder)
+    q_vals_dict, test_reward_avgs_dict, test_reward_stds_dict, steps = average_csvs(
+        args.task_folder
+    )
 
     os.makedirs("results", exist_ok=True)
 
     # Training reward over time
     plt.figure()
     ax = plt.subplot(111)
-    ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+    ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
     ax.xaxis.major.formatter._useMathText = True
     for algo_type in test_reward_avgs_dict:
         means = test_reward_avgs_dict[algo_type]
         stds = test_reward_stds_dict[algo_type]
-        plt.errorbar(steps, means, stds, capsize=3,
-                     linestyle=":", fmt="o", label=algo_type)
+        plt.plot(steps, means, label=algo_type)
+        plt.fill_between(steps, means - stds, means + stds, alpha=0.2)
 
     plt.title(args.task_folder)
     plt.xlabel("Step")
