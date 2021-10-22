@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pandas as pd
 
+from scipy import stats
+
 
 def average_csvs(task_folder):
 
@@ -77,10 +79,9 @@ if __name__ == "__main__":
         plt.plot(steps, means, label=algo_type)
         plt.fill_between(steps, means - stds, means + stds, alpha=0.2)
 
-    plt.title(args.task_folder)
-    plt.xlabel("Step")
-    plt.ylabel("(Avg.) Reward")
-    plt.legend()
+    plt.xlabel("Step", fontsize=20)
+    plt.ylabel("(Avg.) Reward", fontsize=20)
+    plt.legend(fontsize=14)
     plt.savefig(f"results/training_{args.task_folder}")
 
     # Plot for spread of Q-values
@@ -93,9 +94,12 @@ if __name__ == "__main__":
 
     qs = q_vals_dict["dqn"]
     qs_double = q_vals_dict["double_dqn"]
+
+    print("P-val", stats.ttest_ind(qs, qs_double).pvalue)
+
     plt.boxplot([qs, qs_double])
-    plt.ylabel("Mean Q-Values")
+    plt.ylabel("Mean Q-Values", fontsize=20)
+    plt.xlabel("Algorithm", fontsize=20)
     ax.set_xticks([1, 2])
     ax.set_xticklabels(["DQN", "Double DQN"])
-    plt.title(args.task_folder)
     plt.savefig(f"results/boxplot_{args.task_folder}")
