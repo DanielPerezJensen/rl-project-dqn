@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pandas as pd
 
+from scipy import stats
+
 
 def average_csvs(task_folder):
 
@@ -92,6 +94,9 @@ if __name__ == "__main__":
 
     qs = q_vals_dict["dqn"]
     qs_double = q_vals_dict["double_dqn"]
+
+    print("P-val", stats.ttest_ind(qs, qs_double).pvalue)
+
     plt.boxplot([qs, qs_double])
     plt.ylabel("Mean Q-Values", fontsize=20)
     plt.xlabel("Algorithm", fontsize=20)
